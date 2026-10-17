@@ -92,19 +92,29 @@ final class PasteLensBridge {
 
     private(set) var conflict = false
     @ObservationIgnored private var warnedThisLaunch = false
+    /// What PasteLens (1.1.1 and later) last announced; nil until it does (or once it quits).
+    @ObservationIgnored private var announced: Bool?
     @ObservationIgnored private var timer: Timer?
 
     func start() {
         let center = DistributedNotificationCenter.default()
-        center.addObserver(forName: Self.pasteLensChanged, object: nil, queue: .main) { _ in
-            MainActor.assumeIsolated { PasteLensBridge.shared.check() }
+        center.addObserver(forName: Self.pasteLensChanged, object: nil, queue: .main) { note in
+            let enabled = (note.userInfo?["enabled"] as? String).map { $0 == "1" }
+            MainActor.assumeIsolated {
+                let bridge = PasteLensBridge.shared
+                // The first word from the other app gets an answer, in case it missed ours.
+                let firstWord = bridge.announced == nil
+                bridge.announced = enabled
+                if firstWord { bridge.announce() } else { bridge.check() }
+            }
         }
         for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
             NSWorkspace.shared.notificationCenter.addObserver(forName: name, object: nil, queue: .main) { note in
                 let id = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.bundleIdentifier
                 guard id == PasteLensBridge.pasteLensID else { return }
-                // Give it a moment to read its settings.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { MainActor.assumeIsolated { PasteLensBridge.shared.check() } }
+                MainActor.assumeIsolated { PasteLensBridge.shared.announced = nil }
+                // Say where this app stands once the other is up, then look again.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { MainActor.assumeIsolated { PasteLensBridge.shared.announce() } }
             }
         }
         // A settings change in an older PasteLens isn't announced; look now and then.
@@ -123,10 +133,11 @@ final class PasteLensBridge {
         check()
     }
 
-    static var pasteLensExpanding: Bool {
-        // Read straight from PasteLens's preferences, refreshed first so a change made there shows.
-        CFPreferencesAppSynchronize(pasteLensID as CFString)
-        return (CFPreferencesCopyAppValue("snippets.expansion" as CFString, pasteLensID as CFString) as? Bool) ?? false
+    var pasteLensExpanding: Bool {
+        if let announced { return announced }
+        // An older PasteLens doesn't announce: read its preferences, refreshed first so a change made there shows.
+        CFPreferencesAppSynchronize(Self.pasteLensID as CFString)
+        return (CFPreferencesCopyAppValue("snippets.expansion" as CFString, Self.pasteLensID as CFString) as? Bool) ?? false
     }
 
     static var pasteLensRunning: Bool {
@@ -134,8 +145,11 @@ final class PasteLensBridge {
     }
 
     func check() {
-        let now = Preferences.shared.enabled && Self.pasteLensRunning && Self.pasteLensExpanding
-        if now != conflict { conflict = now }
+        let now = Preferences.shared.enabled && Self.pasteLensRunning && pasteLensExpanding
+        if now != conflict {
+            conflict = now
+            NSLog("ExpansionLens: PasteLens \(now ? "is also" : "is no longer") expanding abbreviations")
+        }
         if now, !warnedThisLaunch, Preferences.shared.warnPasteLens {
             warnedThisLaunch = true
             Notifier.pasteLensConflict()
