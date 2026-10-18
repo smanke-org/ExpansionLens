@@ -80,7 +80,7 @@ struct WelcomeView: View {
 }
 
 /// Debug-only hooks for testing without driving the UI, set through environment variables:
-/// `EXPANSIONLENS_DEBUG=main` opens the main window; `fill:<abbreviation>` shows its fill-in window; `render:<abbreviation>` writes the expansion (scripts run) to
+/// `EXPANSIONLENS_DEBUG=main` opens the main window; `fill:<abbreviation>` shows its fill-in window; `settings:<tab>` opens Settings; `render:<abbreviation>` writes the expansion (scripts run) to
 /// `EXPANSIONLENS_DEBUG_OUT`; `scan` writes what Import would find (and imports it with
 /// EXPANSIONLENS_DEBUG_IMPORT=1); `insert:<abbreviation>`
 /// types the snippet into the front app after 2 seconds.
@@ -137,6 +137,8 @@ enum DebugHooks {
             if let snippet = library.snippet(abbreviation: String(command.dropFirst(5))) {
                 FillInWindow.show(snippet: snippet, items: FieldCollector.items(for: snippet, in: library), atTop: false) { _ in }
             }
+        } else if command.hasPrefix("settings:") {
+            SettingsWindow.shared.show(tab: String(command.dropFirst(9)))
         } else if command == "main" {
             MainWindow.shared.show()
         } else if command.hasPrefix("insert:") {

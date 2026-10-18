@@ -132,10 +132,15 @@ struct ExpansionSettings: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Delimiters") {
-                HStack {
-                    Toggle("Space", isOn: delimiter(" "))
-                    Toggle("Tab", isOn: delimiter("\t"))
-                    Toggle("Return", isOn: delimiter("\n"))
+                // Checkboxes, each with its label right beside it: switches in a row read as
+                // belonging to the label on their right.
+                LabeledContent("Keys") {
+                    HStack(spacing: 16) {
+                        Toggle("Space", isOn: delimiter(" "))
+                        Toggle("Tab", isOn: delimiter("\t"))
+                        Toggle("Return", isOn: delimiter("\n"))
+                    }
+                    .toggleStyle(.checkbox)
                 }
                 LabeledContent("Punctuation") {
                     TextField("", text: Binding(
