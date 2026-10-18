@@ -24,9 +24,12 @@ enum FillInWindow {
         let view = FillInView(snippet: snippet, items: items) { values in close(with: values) }
         let hosting = NSHostingView(rootView: view)
         panel.contentView = hosting
-        let size = hosting.fittingSize
+        // A scrolling form asks for almost no height, so size the window from the fields it
+        // shows, as tall as the screen allows; the form scrolls only when that isn't enough.
         let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 800)
-        panel.setContentSize(NSSize(width: max(size.width, 420), height: min(size.height, screen.height - 80)))
+        let wanted = FillInView.formHeight(for: items) + FillInView.previewHeight + FillInView.buttonsHeight
+        panel.contentMinSize = NSSize(width: 420, height: 320)
+        panel.setContentSize(NSSize(width: min(600, screen.width - 40), height: min(wanted, screen.height - 60)))
         if atTop {
             panel.setFrameTopLeftPoint(NSPoint(x: screen.midX - panel.frame.width / 2, y: screen.maxY - 20))
         } else {
@@ -67,15 +70,18 @@ struct FillInView: View {
             }
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
+            // As tall as its rows (scrolling past that); extra room goes to the preview.
+            .frame(minHeight: 120, idealHeight: Self.formHeight(for: items), maxHeight: Self.formHeight(for: items))
             GroupBox("Preview") {
                 ScrollView {
                     Text(preview.isEmpty ? " " : preview)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(minHeight: 50, maxHeight: 160)
+                .frame(maxWidth: .infinity, minHeight: 80, maxHeight: .infinity)
             }
             .padding(.horizontal)
+            .padding(.top, 4)
             HStack {
                 Spacer()
                 Button("Cancel") { done(nil) }.keyboardShortcut(.cancelAction)
@@ -86,6 +92,23 @@ struct FillInView: View {
         .frame(minWidth: 420)
         .onAppear {
             focused = items.first(where: { if case .field = $0 { return true }; return false })?.name
+        }
+    }
+
+    static let previewHeight: CGFloat = 220
+    static let buttonsHeight: CGFloat = 64
+
+    /// Roughly how tall the form is with every row showing.
+    static func formHeight(for items: [FieldCollector.Item]) -> CGFloat {
+        items.reduce(CGFloat(44)) { total, item in
+            switch item {
+            case .field(let field) where field.kind == .area:
+                total + CGFloat(field.height.map { max(min($0, 400), 40) } ?? 80) + 28
+            case .optional(_, _, let preview):
+                total + (preview.isEmpty ? 40 : 54)
+            default:
+                total + 40
+            }
         }
     }
 
