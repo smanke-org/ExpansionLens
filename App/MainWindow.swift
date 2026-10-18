@@ -127,9 +127,12 @@ struct LibraryView: View {
             }
             .navigationSplitViewColumnWidth(min: 260, ideal: 320)
         } detail: {
+            // In the detail column: an inset on the whole split view is ignored by the sidebar
+            // and list columns, which then draw underneath the banner.
             detail
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .safeAreaInset(edge: .top, spacing: 0) { banner }
         }
-        .safeAreaInset(edge: .top, spacing: 0) { banner }
         .searchable(text: $model.search, placement: .toolbar, prompt: "Search snippets")
         .toolbar {
             ToolbarItemGroup {
@@ -186,8 +189,8 @@ struct BannerRow: View {
     var body: some View {
         HStack {
             Image(systemName: symbol).foregroundStyle(.orange)
-            Text(text).font(.callout)
-            Spacer()
+            Text(text).font(.callout).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
             if let button { Button(button, action: action) }
         }
         .padding(.horizontal, 12).padding(.vertical, 8)

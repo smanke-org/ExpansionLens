@@ -80,7 +80,7 @@ struct WelcomeView: View {
 }
 
 /// Debug-only hooks for testing without driving the UI, set through environment variables:
-/// `EXPANSIONLENS_DEBUG=render:<abbreviation>` writes the expansion (scripts run) to
+/// `EXPANSIONLENS_DEBUG=main` opens the main window; `render:<abbreviation>` writes the expansion (scripts run) to
 /// `EXPANSIONLENS_DEBUG_OUT`; `scan` writes what Import would find (and imports it with
 /// EXPANSIONLENS_DEBUG_IMPORT=1); `insert:<abbreviation>`
 /// types the snippet into the front app after 2 seconds.
@@ -131,6 +131,8 @@ enum DebugHooks {
                     LibraryStore.shared.updateSnippet(changed)
                 }
             }
+        } else if command == "main" {
+            MainWindow.shared.show()
         } else if command.hasPrefix("insert:") {
             let abbreviation = String(command.dropFirst(7))
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
