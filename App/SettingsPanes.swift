@@ -16,6 +16,14 @@ struct GeneralSettings: View {
     var body: some View {
         Form {
             Section {
+                LabeledContent {
+                    Button("Open ExpansionLens") { MainWindow.shared.show() }
+                } label: {
+                    Text("Your snippets")
+                    Text("Add, edit and organize snippets in the library window.").font(.caption)
+                }
+            }
+            Section {
                 Toggle("Expand abbreviations", isOn: $prefs.enabled)
                 LabeledContent {
                     if ExpansionEngine.trusted { Label("Allowed", systemImage: "checkmark.circle.fill").foregroundStyle(.green) }
