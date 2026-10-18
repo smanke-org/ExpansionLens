@@ -80,7 +80,7 @@ struct WelcomeView: View {
 }
 
 /// Debug-only hooks for testing without driving the UI, set through environment variables:
-/// `EXPANSIONLENS_DEBUG=main` opens the main window; `fill:<abbreviation>` shows its fill-in window; `settings:<tab>` opens Settings; `render:<abbreviation>` writes the expansion (scripts run) to
+/// `EXPANSIONLENS_DEBUG=main` opens the main window; `fill:<abbreviation>` shows its fill-in window; `settings:<tab>` opens Settings; `menus` writes the menus' titles; `render:<abbreviation>` writes the expansion (scripts run) to
 /// `EXPANSIONLENS_DEBUG_OUT`; `scan` writes what Import would find (and imports it with
 /// EXPANSIONLENS_DEBUG_IMPORT=1); `insert:<abbreviation>`
 /// types the snippet into the front app after 2 seconds.
@@ -139,6 +139,12 @@ enum DebugHooks {
             }
         } else if command.hasPrefix("settings:") {
             SettingsWindow.shared.show(tab: String(command.dropFirst(9)))
+        } else if command == "menus" {
+            // Writes the app menu and the menu bar menu, one title per line.
+            let app = NSApp.mainMenu?.items.first?.submenu?.items.map { $0.isSeparatorItem ? "---" : $0.title } ?? []
+            let status = NSMenu()
+            (NSApp.delegate as? NSMenuDelegate)?.menuNeedsUpdate?(status)
+            write((["[app menu]"] + app + ["", "[menu bar menu]"] + status.items.map { $0.isSeparatorItem ? "---" : $0.title }).joined(separator: "\n"))
         } else if command == "main" {
             MainWindow.shared.show()
         } else if command.hasPrefix("insert:") {

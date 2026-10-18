@@ -124,6 +124,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func mainMenu() -> NSMenu {
         let menu = AppPresence.mainMenu(appName: AppInfo.name, settingsTitle: "Settings…", target: self, settings: #selector(showSettings))
+        // Right below About in the app menu.
+        if let appMenu = menu.items.first?.submenu {
+            var index = 1
+            #if !APPSTORE
+            appMenu.insertItem(item("Check for Updates…", #selector(checkForUpdates)), at: index)
+            index += 1
+            #endif
+            appMenu.insertItem(item("Our other apps…", #selector(showOtherApps)), at: index)
+        }
         let fileItem = NSMenuItem()
         let file = NSMenu(title: "File")
         file.addItem(item("New Snippet", #selector(newSnippet), key: "n"))
@@ -221,14 +230,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(item("Import from Other Apps…", #selector(importFromApps)))
         menu.addItem(item("Import File…", #selector(importFile)))
-        #if !APPSTORE
-        if let version = UpdateAvailability.shared.pending {
-            menu.addItem(.separator())
-            menu.addItem(item("Install ExpansionLens \(version)…", #selector(installUpdate)))
-        }
-        #endif
         menu.addItem(.separator())
         menu.addItem(item("Settings…", #selector(showSettings), key: ","))
+        #if !APPSTORE
+        menu.addItem(updateItem())
+        #endif
+        menu.addItem(item("About ExpansionLens", #selector(showAbout)))
+        menu.addItem(item("Our other apps…", #selector(showOtherApps)))
+        menu.addItem(.separator())
         let version = NSMenuItem(title: "ExpansionLens \(AppInfo.displayVersion)", action: nil, keyEquivalent: "")
         version.isEnabled = false
         menu.addItem(version)
@@ -282,5 +291,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func quit() { NSApp.terminate(nil) }
     #if !APPSTORE
     @objc private func installUpdate() { AutoUpdater.shared.installNow() }
+    @objc private func checkForUpdates() { UpdateController.checkForUpdates() }
+    /// The developer's site, which lists every app.
+    @objc private func showOtherApps() {
+        if let url = URL(string: "https://stevemanke.com/") { NSWorkspace.shared.open(url) }
+    }
+    @objc private func showAbout() {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.orderFrontStandardAboutPanel(nil)
+    }
+
+    /// Check for Updates, or what's waiting when an update is already known.
+    private func updateItem() -> NSMenuItem {
+        if let staged = AutoUpdater.shared.staged {
+            return item("Update to \(staged.version) Now (Otherwise Installs When Idle)", #selector(installUpdate))
+        } else if let pending = UpdateAvailability.shared.pending {
+            return item("Update to \(pending)…", #selector(checkForUpdates))
+        }
+        return item("Check for Updates…", #selector(checkForUpdates))
+    }
     #endif
 }
