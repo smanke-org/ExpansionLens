@@ -19,6 +19,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = mainMenu()
         AppAppearance.start()
+        #if DEBUG
+        // A test run shares the installed app's settings, so it checks Help and stops
+        // before sync or anything else starts.
+        if let snapshot = ProcessInfo.processInfo.environment["EXPANSIONLENS_DEBUG_HELP_TEST"] {
+            DebugHelpTest.run(snapshot: snapshot, delegate: self)
+            return
+        }
+        #endif
         let newInstall = !AppDefaults.store.bool(forKey: "welcomed")
 
         _ = LibraryStore.shared
@@ -160,6 +168,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let format = NSMenuItem()
         format.submenu = NSFontManager.shared.fontMenu(true)
         format.submenu?.title = "Format"
+        // Help menu, with the standard ⌘? (macOS adds its search field).
+        let helpItem = NSMenuItem()
+        let help = NSMenu(title: "Help")
+        let helpOpen = NSMenuItem(title: "ExpansionLens Help", action: #selector(showHelp), keyEquivalent: "?")
+        helpOpen.target = self
+        help.addItem(helpOpen)
+        helpItem.submenu = help
+        menu.addItem(helpItem)
+        NSApp.helpMenu = help
         menu.insertItem(format, at: 3)
         return menu
     }
@@ -232,6 +249,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(item("Import from Other Apps…", #selector(importFromApps)))
         menu.addItem(item("Import File…", #selector(importFile)))
         menu.addItem(.separator())
+        let helpEntry = NSMenuItem(title: "ExpansionLens Help", action: #selector(showHelp), keyEquivalent: "")
+        helpEntry.target = self
+        helpEntry.image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)
+        menu.addItem(helpEntry)
         menu.addItem(item("Settings…", #selector(showSettings), key: ","))
         #if !APPSTORE
         menu.addItem(updateItem())
@@ -287,6 +308,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func importFile() { Importer.importFile() }
     @objc private func exportSnippets() { Importer.export() }
     @objc private func showSettings() { SettingsWindow.shared.show() }
+    @objc func showHelp() { HelpWindow.shared.show() }
     @objc private func turnOffPasteLens() { PasteLensBridge.askPasteLensToStopExpanding() }
     @objc private func allowAccessibility() { ExpansionEngine.requestAccess(); ExpansionEngine.openAccessibilitySettings() }
     @objc private func quit() { NSApp.terminate(nil) }
