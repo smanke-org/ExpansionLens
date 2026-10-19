@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = mainMenu()
+        AppAppearance.start()
         let newInstall = !AppDefaults.store.bool(forKey: "welcomed")
 
         _ = LibraryStore.shared

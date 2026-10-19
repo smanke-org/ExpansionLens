@@ -61,7 +61,7 @@ final class Preferences {
         Key.mode, Key.caseMode, Key.expandAfter, Key.delimiters, Key.sound, Key.restoreClipboard, Key.restoreDelay, Key.scope,
         Key.scripts, Key.scriptTimeout, Key.capSentences, Key.capDoubleCaps, Key.capScope, Key.capContraction,
         Key.suggestions, Key.suggestionsNotify, Key.tutor, Key.suggestScope, Key.newType,
-        "updatePolicy", UpdateInterval.valueKey, UpdateInterval.unitKey,
+        "updatePolicy", UpdateInterval.valueKey, UpdateInterval.unitKey, AppAppearance.key,
     ] + HotKeyAction.allCases.map { Key.hotKeyPrefix + $0.rawValue }
 
     // MARK: Expansion

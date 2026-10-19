@@ -47,6 +47,7 @@ struct GeneralSettings: View {
                     }
                 }
             }
+            AppearanceSection(appName: "ExpansionLens") { SyncEngine.shared.settingChanged(AppAppearance.key) }
             Section("Where ExpansionLens appears") {
                 Toggle("Show in Dock", isOn: $presence.showInDock)
                 Toggle("Show in menu bar", isOn: $presence.showInMenuBar)
