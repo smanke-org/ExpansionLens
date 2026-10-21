@@ -5,6 +5,7 @@ import SwiftUI
 struct GeneralSettings: View {
     @State private var prefs = Preferences.shared
     @State private var presence = PresenceSettings.shared
+    @State private var hub = MenuHub.shared
     @State private var login = LaunchAtLogin.shared
     @State private var engine = ExpansionEngine.shared
     @State private var bridge = PasteLensBridge.shared
@@ -51,6 +52,8 @@ struct GeneralSettings: View {
             Section("Where ExpansionLens appears") {
                 Toggle("Show in Dock", isOn: $presence.showInDock)
                 Toggle("Show in menu bar", isOn: $presence.showInMenuBar)
+                Toggle("Put in ToolHUD’s menu while ToolHUD is running", isOn: $hub.foldIntoToolHUD)
+                    .help("ToolHUD shows this menu as a submenu of its own, and ExpansionLens’s icon leaves the menu bar until ToolHUD quits.")
                 if !presence.showInDock && !presence.showInMenuBar {
                     Text(AppPresence.hiddenEverywhereNote(appName: "ExpansionLens", settingsName: "Settings"))
                         .font(.callout).foregroundStyle(.secondary)

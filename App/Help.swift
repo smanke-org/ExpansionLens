@@ -71,6 +71,7 @@ enum Help {
             .heading("Allow Accessibility"),
             .text("ExpansionLens needs Accessibility permission (macOS 27 calls it Device Control) to see what you type and put snippets in place. If the menu bar menu shows \"Allow Accessibility to Expand…\", choose it."),
             .tip("Already using another text expander? File › Import from Other Apps… brings its snippets in."),
+            .tip("While ToolHUD is running, ExpansionLens's menu moves into ToolHUD's menu bar menu as a submenu, and the icon here steps aside until ToolHUD quits. To keep the icon, turn off \"Put in ToolHUD's menu while ToolHUD is running\" in Settings."),
         ]),
 
         HelpTopic(id: "snippets", title: "Snippets and Groups", symbol: "text.append", blocks: [
