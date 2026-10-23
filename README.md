@@ -88,3 +88,7 @@ swift test                 # the ExpansionLensKit tests
 ```
 
 `./release.sh X.Y.Z` builds, notarizes, makes the disk image and publishes the GitHub release.
+
+## License
+
+© 2026 Steve Manke. All rights reserved.
