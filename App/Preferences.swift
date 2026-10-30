@@ -52,6 +52,7 @@ final class Preferences {
         static let suggestScope = "suggestions.scope"
         static let newType = "editor.newType"
         static let warnPasteLens = "pastelens.warn"
+        static let confirmQuit = "confirmQuit"
         static let hotKeyPrefix = "hotkey."
     }
 
@@ -60,7 +61,7 @@ final class Preferences {
     static let syncedKeys: [String] = [
         Key.mode, Key.caseMode, Key.expandAfter, Key.delimiters, Key.sound, Key.restoreClipboard, Key.restoreDelay, Key.scope,
         Key.scripts, Key.scriptTimeout, Key.capSentences, Key.capDoubleCaps, Key.capScope, Key.capContraction,
-        Key.suggestions, Key.suggestionsNotify, Key.tutor, Key.suggestScope, Key.newType,
+        Key.suggestions, Key.suggestionsNotify, Key.tutor, Key.suggestScope, Key.newType, Key.confirmQuit,
         "updatePolicy", UpdateInterval.valueKey, UpdateInterval.unitKey, AppAppearance.key,
     ] + HotKeyAction.allCases.map { Key.hotKeyPrefix + $0.rawValue }
 
@@ -106,6 +107,8 @@ final class Preferences {
 
     var newType: ContentType { didSet { save(Key.newType, newType.rawValue) } }
     var warnPasteLens: Bool { didSet { defaults.set(warnPasteLens, forKey: Key.warnPasteLens) } }
+    /// Quitting asks first, so a stray ⌘Q doesn't stop expansion.
+    var confirmQuit: Bool { didSet { save(Key.confirmQuit, confirmQuit) } }
 
     var hotKeys: [HotKeyAction: HotKey] = [:]
 
@@ -136,12 +139,13 @@ final class Preferences {
             Key.restoreClipboard: true, Key.restoreDelay: 0.5, Key.scripts: false, Key.scriptTimeout: 5.0,
             Key.capSentences: false, Key.capDoubleCaps: false, Key.capContraction: "",
             Key.suggestions: false, Key.suggestionsNotify: true, Key.tutor: false,
-            Key.newType: ContentType.plainText.rawValue, Key.warnPasteLens: true,
+            Key.newType: ContentType.plainText.rawValue, Key.warnPasteLens: true, Key.confirmQuit: true,
         ])
         enabled = true; mode = .keepDelimiter; caseMode = .caseSensitive; expandAfter = .anyCharacter
         delimiters = ""; sound = false; restoreClipboard = true; restoreDelay = 0.5; scope = .all
         scriptsAllowed = false; scriptTimeout = 5; capSentences = false; capDoubleCaps = false; capScope = .all; capContraction = ""
         suggestions = false; suggestionsNotify = true; tutor = false; suggestScope = .all; newType = .plainText; warnPasteLens = true
+        confirmQuit = true
         load()
         loaded = true
     }
@@ -173,6 +177,7 @@ final class Preferences {
         suggestScope = coded(Key.suggestScope) ?? .all
         newType = ContentType(rawValue: d.string(forKey: Key.newType) ?? "") ?? .plainText
         warnPasteLens = d.bool(forKey: Key.warnPasteLens)
+        confirmQuit = d.bool(forKey: Key.confirmQuit)
         var keys: [HotKeyAction: HotKey] = [:]
         for action in HotKeyAction.allCases {
             let k = Key.hotKeyPrefix + action.rawValue

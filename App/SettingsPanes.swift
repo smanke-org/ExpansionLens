@@ -63,6 +63,8 @@ struct GeneralSettings: View {
                 Toggle("Open ExpansionLens at login", isOn: Binding(get: { login.isEnabled }, set: { login.set($0) }))
                 if login.needsApproval { Button("Allow in Login Items…") { login.openLoginItemsSettings() } }
                 if let error = login.lastError { Text(error).font(.callout).foregroundStyle(.red) }
+                Toggle("Ask before quitting", isOn: $prefs.confirmQuit)
+                    .help("Quitting ExpansionLens asks first, so a stray ⌘Q doesn't stop your abbreviations expanding.")
                 Toggle("Warn when PasteLens also expands abbreviations", isOn: $prefs.warnPasteLens)
             }
             #if !APPSTORE
