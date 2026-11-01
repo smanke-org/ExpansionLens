@@ -111,6 +111,9 @@ final class AutoUpdater: NSObject, UNUserNotificationCenterDelegate {
             UNNotificationCategory(identifier: Self.category, actions: [install], intentIdentifiers: []),
         ] + Notifier.categories))
         if policy != .off { requestNotificationPermission() }
+        // Before "welcomed" is set for a new install, and before the automatic-update record is read.
+        WhatsNew.shared.noteLaunch(newInstall: !AppDefaults.store.bool(forKey: "welcomed"),
+                                   autoInstalledFrom: AppDefaults.store.string(forKey: Self.installedFromKey))
         announceIfJustUpdated()
 
         checkIfDue()
@@ -284,7 +287,7 @@ final class AutoUpdater: NSObject, UNUserNotificationCenterDelegate {
         AppDefaults.store.removeObject(forKey: Self.installedFromKey)
         guard from != AppInfo.version else { return }
         notify(id: "updated-\(AppInfo.version)", title: "ExpansionLens updated to \(AppInfo.version)",
-               body: "It installed itself while your Mac wasn't in use.", installable: false)
+               body: "It installed itself while your Mac wasn't in use. Click to see what's new.", installable: false)
     }
 
     private func notifyAvailable(_ version: String) {
@@ -315,6 +318,7 @@ final class AutoUpdater: NSObject, UNUserNotificationCenterDelegate {
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
         let content = response.notification.request.content
         let installable = content.categoryIdentifier == Self.category
+        let updated = response.notification.request.identifier.hasPrefix("updated-")
         let category = content.categoryIdentifier
         let action = response.actionIdentifier
         let info = content.userInfo as? [String: String] ?? [:]
@@ -322,7 +326,10 @@ final class AutoUpdater: NSObject, UNUserNotificationCenterDelegate {
             MainActor.assumeIsolated {
                 // Clicking the banner or its Install button opens the usual confirmation,
                 // so the user still sees what they're agreeing to.
-                if installable { UpdateController.checkForUpdates() } else { Notifier.handle(category: category, action: action, info: info) }
+                if installable { UpdateController.checkForUpdates() }
+                // "Updated": Settings, which shows what changed.
+                else if updated { SettingsWindow.shared.show() }
+                else { Notifier.handle(category: category, action: action, info: info) }
             }
         }
         completionHandler()
