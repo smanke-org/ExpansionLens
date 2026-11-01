@@ -105,6 +105,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         withObservationTracking({ _ = Preferences.shared.enabled }, onChange: { [weak self] in
             DispatchQueue.main.async { MainActor.assumeIsolated { self?.enabledChanged() } }
         })
+        // ToolHUD lights its expansion buttons to match.
+        ToolHUDFeatureStates.start {
+            let on = Preferences.shared.enabled
+            return ["toggle": on, "on": on, "off": !on]
+        }
 
         #if !APPSTORE
         // Test copies (with their own data folder) leave updates to the real app.
@@ -123,6 +128,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func enabledChanged() {
         updateStatusIcon()
         PasteLensBridge.shared.announce()
+        ToolHUDFeatureStates.publish()
         withObservationTracking({ _ = Preferences.shared.enabled }, onChange: { [weak self] in
             DispatchQueue.main.async { MainActor.assumeIsolated { self?.enabledChanged() } }
         })
