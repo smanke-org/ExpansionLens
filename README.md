@@ -4,6 +4,8 @@
 
 There's no subscription, no account and no snippet limit.
 
+<p align="center"><img src="docs/images/expansionlens-library.png" width="800" alt="The ExpansionLens library window with groups (My Snippets, Email, Support replies, Developer) in the sidebar and a list of sample snippets"></p>
+
 ## Download
 
 ### ⬇️ [Download ExpansionLens.dmg](https://github.com/smanke-org/ExpansionLens/releases/latest/download/ExpansionLens.dmg)
@@ -31,6 +33,14 @@ Requires macOS 26 or later.
 - **Conflicts**: abbreviations that clash or hide each other are listed so you can fix them.
 - **Import**: brings in snippet libraries from other snippet apps on this Mac, CSV files (abbreviation, content, label) and snippet group property lists. Export saves a JSON backup.
 - **PasteLens**: if PasteLens's own abbreviation expansion is on, ExpansionLens offers to turn it off so nothing expands twice.
+
+## Screenshots
+
+<table>
+<tr>
+<td align="center"><img src="docs/images/expansionlens-welcome.png" width="420" alt="The Welcome to ExpansionLens window with three steps: allow Accessibility, bring in your snippets, and try it"><br><sub><b>Getting started.</b> Allow Accessibility, bring in snippets from other apps or a file, and try one.</sub></td>
+</tr>
+</table>
 
 ## Snippet macros
 
