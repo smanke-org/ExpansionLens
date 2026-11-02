@@ -157,6 +157,16 @@ final class HotKeyCenter {
             }
             next += 1
         }
+        ShortcutsLensReport.publish()
+    }
+
+    /// For ShortcutsLens: the shortcuts that registered, named as Settings names them.
+    var reportedShortcuts: [ShortcutsLensReport.Shortcut] {
+        let registered = Set(actions.values)
+        return HotKeyAction.allCases.compactMap { action in
+            guard registered.contains(action), let key = Preferences.shared.hotKey(action) else { return nil }
+            return .init(id: action.rawValue, title: action.title, keyCode: Int(key.keyCode), carbonModifiers: Int(key.modifiers))
+        }
     }
 
     /// Who already uses a shortcut, to warn before assigning it twice.

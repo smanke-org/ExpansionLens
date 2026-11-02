@@ -87,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         _ = LibraryStore.shared
         HotKeyCenter.shared.perform = { [weak self] action in self?.perform(action) }
         ExpansionEngine.shared.start()
+        ShortcutsLensReport.start { HotKeyCenter.shared.reportedShortcuts }
         SyncEngine.shared.start()
         PasteLensBridge.shared.start()
         setUpStatusItem()
