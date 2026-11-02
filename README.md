@@ -81,11 +81,11 @@ ExpansionLens watches keys only to spot abbreviations, keeping the last few hund
 
 ## Updates
 
-ExpansionLens checks GitHub for new versions (once a day unless you change it) and, as you choose in **Settings › General**, installs them automatically when your Mac is idle, asks first, or doesn't check. Every download must be signed by the same developer and notarized by Apple before it's installed.
+ExpansionLens checks GitHub for new versions (once a day unless you change it) and, as you choose in **Settings › General**, installs them automatically when your Mac is idle, asks first, or doesn't check. Every download must be signed by the same developer and notarized by Apple before it's installed. The update window shows the notes for the latest releases, with the ones you don't have yet marked New. After an update that installed itself, Settings shows what changed the next time it opens.
 
 ## URL scheme
 
-`expansionlens://quicksearch`, `expansionlens://new`, `expansionlens://newfromclipboard`, `expansionlens://editlast`, `expansionlens://toggle`, `expansionlens://on`, `expansionlens://off`, `expansionlens://settings`.
+`expansionlens://quicksearch`, `expansionlens://new`, `expansionlens://newfromclipboard`, `expansionlens://editlast`, `expansionlens://toggle`, `expansionlens://on`, `expansionlens://off`, `expansionlens://settings`. ToolHUD's ExpansionLens buttons use these, and can show whether expansion is on.
 
 ## Building
 

@@ -149,7 +149,7 @@ enum Help {
                 ("⌘N / ⇧⌘N", "New snippet / from the clipboard (in ExpansionLens)"),
                 ("⌘?", "This Help, from ExpansionLens's menus"),
             ]),
-            .text("Change the shortcuts in Settings › Shortcuts. They work in every app."),
+            .text("Change the shortcuts in Settings › Shortcuts. They work in every app, and ShortcutsLens lists them under their own names."),
         ]),
 
         HelpTopic(id: "sync", title: "Sync", symbol: "icloud", blocks: [
@@ -170,7 +170,7 @@ enum Help {
                 ("expansionlens://toggle", "Turn expansion on or off (also on and off)"),
                 ("expansionlens://settings", "Open Settings"),
             ]),
-            .text("Use these links from Shortcuts, scripts or a launcher. ToolHUD's ExpansionLens buttons use them."),
+            .text("Use these links from Shortcuts, scripts or a launcher. ToolHUD's ExpansionLens buttons use them, and with \"Show which features are on\" turned on in ToolHUD, they show whether expansion is on."),
         ]),
 
         HelpTopic(id: "troubleshooting", title: "Troubleshooting", symbol: "wrench.and.screwdriver", blocks: [
