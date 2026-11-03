@@ -282,7 +282,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let engine = ExpansionEngine.shared
         switch engine.state {
         case .needsAccessibility:
-            menu.addItem(item("Allow Accessibility to Expand…", #selector(allowAccessibility)))
+            menu.addItem(item("Allow Accessibility to Expand…", #selector(allowAccessibility)).showIcon("exclamationmark.triangle"))
         case .blockedBySecureInput(let app):
             let blocked = NSMenuItem(title: "Expansion Blocked (\(app ?? "Secure Input"))", action: nil, keyEquivalent: "")
             blocked.isEnabled = false
@@ -290,25 +290,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         default: break
         }
         if PasteLensBridge.shared.conflict {
-            menu.addItem(item("PasteLens Is Also Expanding — Turn It Off", #selector(turnOffPasteLens)))
+            menu.addItem(item("PasteLens Is Also Expanding — Turn It Off", #selector(turnOffPasteLens)).showIcon("exclamationmark.triangle"))
         }
         let toggle = item(prefs.enabled ? "Turn Off Expansion" : "Turn On Expansion", #selector(toggleExpansion))
         setKey(toggle, .toggleExpansion)
-        menu.addItem(toggle)
+        menu.addItem(toggle.showIcon(prefs.enabled ? "text.badge.xmark" : "text.cursor"))
         menu.addItem(.separator())
         let search = item("Quick Search…", #selector(quickSearch))
         setKey(search, .quickSearch)
-        menu.addItem(search)
+        menu.addItem(search.showIcon("magnifyingglass"))
         let snippets = NSMenuItem(title: "Insert Snippet", action: nil, keyEquivalent: "")
         snippets.submenu = snippetsMenu()
         menu.addItem(snippets)
         menu.addItem(.separator())
         let open = item("Open ExpansionLens", #selector(showMain))
         setKey(open, .openMain)
-        menu.addItem(open)
+        menu.addItem(open.showIcon("macwindow"))
         let new = item("New Snippet", #selector(newSnippet))
         setKey(new, .newSnippet)
-        menu.addItem(new)
+        menu.addItem(new.showIcon("square.and.pencil"))
         let fromClipboard = item("New Snippet from Clipboard", #selector(newFromClipboard))
         setKey(fromClipboard, .newFromClipboard)
         menu.addItem(fromClipboard)
@@ -324,9 +324,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         helpEntry.target = self
         helpEntry.image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)
         menu.addItem(helpEntry)
-        menu.addItem(item("Settings…", #selector(showSettings), key: ","))
+        menu.addItem(item("Settings…", #selector(showSettings), key: ",").showIcon("gearshape"))
         #if !APPSTORE
-        menu.addItem(updateItem())
+        menu.addItem(updateItem().showIcon("arrow.down.circle"))
         #endif
         menu.addItem(item("About ExpansionLens", #selector(showAbout)))
         menu.addItem(item("Our other apps…", #selector(showOtherApps)))

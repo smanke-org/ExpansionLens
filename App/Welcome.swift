@@ -144,7 +144,7 @@ enum DebugHooks {
             let app = NSApp.mainMenu?.items.first?.submenu?.items.map { $0.isSeparatorItem ? "---" : $0.title } ?? []
             let status = NSMenu()
             (NSApp.delegate as? NSMenuDelegate)?.menuNeedsUpdate?(status)
-            write((["[app menu]"] + app + ["", "[menu bar menu]"] + status.items.map { $0.isSeparatorItem ? "---" : $0.title }).joined(separator: "\n"))
+            write((["[app menu]"] + app + ["", "[menu bar menu]"] + status.items.map { $0.isSeparatorItem ? "---" : $0.plainTitle }).joined(separator: "\n"))
         } else if command == "main" {
             MainWindow.shared.show()
         } else if command.hasPrefix("insert:") {
