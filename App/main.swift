@@ -2,11 +2,16 @@ import AppKit
 import ExpansionLensKit
 import SwiftUI
 
+// `expansionlens <command>` (the app binary under a short name): run it against the running app
+// and exit, without starting a second copy. See Agent/AgentCLI.swift.
+if let code = AgentCLI.runIfRequested() { exit(code) }
+
 MainActor.assumeIsolated {
     let app = NSApplication.shared
     let delegate = AppDelegate()
     app.delegate = delegate
-    app.setActivationPolicy(AppPresence.showInDock ? .regular : .accessory)
+    // An agent CLI test copy stays out of the Dock.
+    app.setActivationPolicy(AppPresence.showInDock && !AgentSocket.isTestRun ? .regular : .accessory)
     app.run()
 }
 
@@ -64,6 +69,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.mainMenu = mainMenu()
         AppAppearance.start()
         #if DEBUG
+        // A test run of the agent CLI (APP_STORE): its own library and settings, and the agent
+        // socket. Nothing else starts: no expansion (event tap), shortcuts, sync, menu bar item,
+        // ToolHUD menu hub, ShortcutsLens report, PasteLens announcements or updater.
+        if AgentSocket.isTestRun {
+            _ = LibraryStore.shared
+            AgentSocket.listen { AgentRouter.handle($0) }
+            return
+        }
         // A test run shares the installed app's settings, so it checks Help and stops
         // before sync or anything else starts.
         if let snapshot = ProcessInfo.processInfo.environment["EXPANSIONLENS_DEBUG_HELP_TEST"] {
@@ -85,6 +98,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let newInstall = !AppDefaults.store.bool(forKey: "welcomed")
 
         _ = LibraryStore.shared
+        // `expansionlens` and its MCP server talk to the app through this.
+        AgentSocket.listen { AgentRouter.handle($0) }
         HotKeyCenter.shared.perform = { [weak self] action in self?.perform(action) }
         ExpansionEngine.shared.start()
         ShortcutsLensReport.start { HotKeyCenter.shared.reportedShortcuts }

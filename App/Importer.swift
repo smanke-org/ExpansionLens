@@ -64,8 +64,18 @@ enum Importer {
         panel.message = "Choose CSV files (abbreviation, content, label), snippet group property lists, or an ExpansionLens export."
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK else { return }
+        let total = read(panel.urls)
+        guard !total.snippets.isEmpty else { alert("Nothing to import", "No snippets were found in that file."); return }
+        LibraryStore.shared.add(total)
+        alert("Imported", "Added \(total.summary).")
+        MainWindow.shared.show(section: .all)
+    }
+
+    /// Reads CSV files, snippet group property lists and ExpansionLens exports (Import File, and
+    /// `expansionlens snippets import`). Files with nothing readable add nothing.
+    static func read(_ urls: [URL]) -> ImportResult {
         var total = ImportResult()
-        for url in panel.urls {
+        for url in urls {
             let name = url.deletingPathExtension().lastPathComponent
             guard let data = try? Data(contentsOf: url) else { continue }
             var result: ImportResult
@@ -83,10 +93,7 @@ enum Importer {
             total.snippets += result.snippets
             total.skipped += result.skipped
         }
-        guard !total.snippets.isEmpty else { alert("Nothing to import", "No snippets were found in that file."); return }
-        LibraryStore.shared.add(total)
-        alert("Imported", "Added \(total.summary).")
-        MainWindow.shared.show(section: .all)
+        return total
     }
 
     static func export() {

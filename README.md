@@ -87,6 +87,27 @@ ExpansionLens checks GitHub for new versions (once a day unless you change it) a
 
 `expansionlens://quicksearch`, `expansionlens://new`, `expansionlens://newfromclipboard`, `expansionlens://editlast`, `expansionlens://toggle`, `expansionlens://on`, `expansionlens://off`, `expansionlens://settings`. ToolHUD's ExpansionLens buttons use these, and can show whether expansion is on.
 
+## Command line and AI agents
+
+ExpansionLens is also a command line tool, so scripts and AI agents (Claude Code, Codex) can list, search, add and change snippets and groups, see what a snippet expands to, import and export snippets, and turn expansion on or off. Commands run in the open app, and the library window shows each change at once. Link it once to type `expansionlens`:
+
+```bash
+ln -s /Applications/ExpansionLens.app/Contents/MacOS/ExpansionLens ~/.local/bin/expansionlens
+```
+
+```bash
+expansionlens help
+expansionlens snippets list --search address --json
+expansionlens snippets add --abbreviation ";sig" --label Signature --content "Best regards, Alex"
+expansionlens snippets expand ";date"
+```
+
+Every command takes `--json`. A snippet can be named by its id or its abbreviation. `snippets expand` only returns the text; nothing is typed into another app, and script snippets don't run. Deleting only shows what it would delete until you add `--yes`. For MCP apps such as Claude Desktop, the same commands are served by `/Applications/ExpansionLens.app/Contents/MacOS/ExpansionLens mcp`:
+
+```bash
+claude mcp add --scope user expansionlens -- /Applications/ExpansionLens.app/Contents/MacOS/ExpansionLens mcp
+```
+
 ## Building
 
 Requires Xcode 26 and [XcodeGen](https://github.com/yonaskolb/XcodeGen).

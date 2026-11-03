@@ -25,7 +25,15 @@ final class LibraryStore {
     @ObservationIgnored private var trackerSaveScheduled = false
 
     private init() {
-        if let custom = ProcessInfo.processInfo.environment["EXPANSIONLENS_DATA_FOLDER"] {
+        #if DEBUG
+        // An agent CLI test copy keeps its library in the APP_STORE folder.
+        let testStore = AgentSocket.isTestRun ? ProcessInfo.processInfo.environment["APP_STORE"] : nil
+        #else
+        let testStore: String? = nil
+        #endif
+        if let testStore {
+            folder = URL(fileURLWithPath: testStore, isDirectory: true)
+        } else if let custom = ProcessInfo.processInfo.environment["EXPANSIONLENS_DATA_FOLDER"] {
             folder = URL(fileURLWithPath: custom)
         } else {
             folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]

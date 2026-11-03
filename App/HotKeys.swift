@@ -141,6 +141,8 @@ final class HotKeyCenter {
 
     /// Registers the shortcuts, replacing earlier registrations.
     func apply() {
+        // An agent CLI test copy registers no shortcuts.
+        guard !AgentSocket.isTestRun else { return }
         installHandlerOnce()
         unregisterAll()
         var next: UInt32 = 1

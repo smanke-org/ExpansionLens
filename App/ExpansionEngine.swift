@@ -68,6 +68,8 @@ final class ExpansionEngine {
 
     func settingsChanged() {
         matcherBundle = .none
+        // An agent CLI test copy never watches the keyboard, whatever its settings say.
+        guard !AgentSocket.isTestRun else { stopTap(); state = .off; return }
         guard Preferences.shared.enabled else { stopTap(); state = .off; return }
         guard Self.trusted else {
             stopTap()

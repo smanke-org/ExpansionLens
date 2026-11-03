@@ -171,6 +171,15 @@ enum Help {
                 ("expansionlens://settings", "Open Settings"),
             ]),
             .text("Use these links from Shortcuts, scripts or a launcher. ToolHUD's ExpansionLens buttons use them, and with \"Show which features are on\" turned on in ToolHUD, they show whether expansion is on."),
+            .heading("Command line and AI agents"),
+            .text("ExpansionLens is also a command line tool, so scripts and AI agents such as Claude Code or Codex can list, search, add and change snippets and groups, see what a snippet expands to, import and export snippets, and turn expansion on or off. Commands run in the open app, and the library window shows each change at once. Nothing is ever typed into another app, and deleting needs --yes."),
+            .keys([
+                ("expansionlens help", "List every command and its options"),
+                ("expansionlens snippets list --search address", "Find snippets, as the library's search does"),
+                ("expansionlens snippets expand ;date", "Show what a snippet expands to, without typing it"),
+                ("expansionlens mcp", "Offer the same commands to MCP apps, such as Claude Desktop"),
+            ]),
+            .text("To type expansionlens in Terminal, link it once: ln -s /Applications/ExpansionLens.app/Contents/MacOS/ExpansionLens ~/.local/bin/expansionlens (with ~/.local/bin on your PATH). MCP apps take the full path to that program, followed by mcp."),
         ]),
 
         HelpTopic(id: "troubleshooting", title: "Troubleshooting", symbol: "wrench.and.screwdriver", blocks: [
