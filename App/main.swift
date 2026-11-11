@@ -102,7 +102,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         AgentSocket.listen { AgentRouter.handle($0) }
         HotKeyCenter.shared.perform = { [weak self] action in self?.perform(action) }
         ExpansionEngine.shared.start()
-        ShortcutsLensReport.start { HotKeyCenter.shared.reportedShortcuts }
+        ShortcutsLensReport.start({ HotKeyCenter.shared.reportedShortcuts }, change: { id, keyCode, modifiers in
+            HotKeyCenter.shared.change(id: id, keyCode: keyCode, carbonModifiers: modifiers)
+        })
         SyncEngine.shared.start()
         PasteLensBridge.shared.start()
         setUpStatusItem()

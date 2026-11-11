@@ -171,6 +171,29 @@ final class HotKeyCenter {
         }
     }
 
+    /// ShortcutsLens's Change Shortcut: saves the keys as Settings › Shortcuts does (so Settings
+    /// shows them and sync carries them) and registers again. Nil when done, or why not.
+    func change(id: String, keyCode: Int, carbonModifiers: Int) -> String? {
+        guard let action = HotKeyAction(rawValue: id) else { return "ExpansionLens has no shortcut called \(id)." }
+        let mods = UInt32(carbonModifiers) & UInt32(controlKey | optionKey | shiftKey | cmdKey)
+        guard mods & UInt32(controlKey | optionKey | cmdKey) != 0, (0...127).contains(keyCode),
+              !RecordingCatcher.skipped.contains(keyCode),
+              let key = HotKey(keyCode: UInt32(keyCode), carbonModifiers: mods) else {
+            return "ExpansionLens shortcuts need ⌘, ⌥ or ⌃ and a key."
+        }
+        if let owner = owner(of: key, except: action) {
+            return "ExpansionLens already uses \(key.display) for “\(owner)”."
+        }
+        let previous = Preferences.shared.hotKey(action)
+        Preferences.shared.setHotKey(key, for: action)
+        apply()
+        guard !actions.values.contains(action) else { return nil }
+        // Taken by another app: keep the old keys rather than leave the shortcut dead.
+        Preferences.shared.setHotKey(previous, for: action)
+        apply()
+        return "\(key.display) is taken by another app, so ExpansionLens kept \(previous?.display ?? "no shortcut")."
+    }
+
     /// Who already uses a shortcut, to warn before assigning it twice.
     func owner(of key: HotKey, except: HotKeyAction) -> String? {
         HotKeyAction.allCases.first { $0 != except && Preferences.shared.hotKey($0).map { $0.keyCode == key.keyCode && $0.modifiers == key.modifiers } == true }?.title
