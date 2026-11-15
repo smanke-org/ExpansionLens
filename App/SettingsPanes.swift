@@ -251,26 +251,20 @@ struct TypingSettings: View {
 
 struct ShortcutSettings: View {
     @State private var prefs = Preferences.shared
-    @State private var warning: String?
 
     var body: some View {
         Form {
             Section {
                 ForEach(HotKeyAction.allCases, id: \.self) { action in
                     LabeledContent(action.title) {
+                        // Keys another shortcut had are moved here by the editor itself.
                         ShortcutRecorder(hotKey: Binding(
                             get: { prefs.hotKey(action) },
-                            set: { key in
-                                if let key, let owner = HotKeyCenter.shared.owner(of: key, except: action) {
-                                    warning = "\(key.display) was already used for “\(owner)”."
-                                } else { warning = nil }
-                                prefs.setHotKey(key, for: action)
-                            }))
+                            set: { prefs.setHotKey($0, for: action) }), action: action)
                     }
                 }
-                if let warning { Text(warning).font(.callout).foregroundStyle(.orange) }
             } footer: {
-                Text("Click a shortcut, then press the keys. Delete clears it. These work in every app.")
+                Text("Click a shortcut to set it: pick the modifier keys and type a key, or press the shortcut. Keys another shortcut has are moved here. These work in every app.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

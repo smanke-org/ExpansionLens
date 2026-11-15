@@ -149,7 +149,7 @@ enum Help {
                 ("⌘N / ⇧⌘N", "New snippet / from the clipboard (in ExpansionLens)"),
                 ("⌘?", "This Help, from ExpansionLens's menus"),
             ]),
-            .text("Change the shortcuts in Settings › Shortcuts. They work in every app, and ShortcutsLens lists them under their own names."),
+            .text("Change the shortcuts in Settings › Shortcuts. Click a shortcut to open its editor: turn on the modifier keys (⌃ ⌥ ⇧ ⌘), type a letter, number or symbol, or pick Space, an arrow or an F-key from the keyboard menu — or just press the shortcut. Shortcuts need ⌘, ⌥ or ⌃, except F-keys. If another ExpansionLens shortcut has the keys, they move to this one and the other is cleared. Clear removes a shortcut. They work in every app, and ShortcutsLens lists them under their own names."),
         ]),
 
         HelpTopic(id: "sync", title: "Sync", symbol: "icloud", blocks: [

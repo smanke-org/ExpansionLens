@@ -18,10 +18,10 @@ struct HotKey: Codable, Equatable, Hashable {
     }
 
     /// Builds one from a key press, if it has at least one of ⌘ ⌥ ⌃ — a bare key would
-    /// steal ordinary typing from every app.
+    /// steal ordinary typing from every app. F-keys may stand alone.
     init?(event: NSEvent) {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        guard !flags.intersection([.command, .option, .control]).isEmpty else { return nil }
+        guard !flags.intersection([.command, .option, .control]).isEmpty || Self.isFunctionKey(Int(event.keyCode)) else { return nil }
         keyCode = UInt32(event.keyCode)
         modifiers = Self.carbon(flags)
         display = Self.symbols(flags) + Self.name(for: event)
@@ -44,7 +44,7 @@ struct HotKey: Codable, Equatable, Hashable {
         return (key.count == 1 ? key : "", mask)
     }
 
-    private static func carbon(_ flags: NSEvent.ModifierFlags) -> UInt32 {
+    static func carbon(_ flags: NSEvent.ModifierFlags) -> UInt32 {
         var carbon: UInt32 = 0
         if flags.contains(.control) { carbon |= UInt32(controlKey) }
         if flags.contains(.option) { carbon |= UInt32(optionKey) }
@@ -53,7 +53,7 @@ struct HotKey: Codable, Equatable, Hashable {
         return carbon
     }
 
-    private static func symbols(_ flags: NSEvent.ModifierFlags) -> String {
+    static func symbols(_ flags: NSEvent.ModifierFlags) -> String {
         var s = ""
         if flags.contains(.control) { s += "⌃" }
         if flags.contains(.option) { s += "⌥" }
@@ -75,8 +75,8 @@ struct HotKey: Codable, Equatable, Hashable {
         self.display = Self.symbols(flags) + name
     }
 
-    /// The character a key types on the current keyboard layout, with no modifiers.
-    static func layoutCharacter(_ code: UInt16) -> String? {
+    /// The character a key types on the current keyboard layout, with no modifiers (or ⇧ only).
+    static func layoutCharacter(_ code: UInt16, shift: Bool = false) -> String? {
         guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
               let raw = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return nil }
         let data = Unmanaged<CFData>.fromOpaque(raw).takeUnretainedValue() as Data
@@ -85,7 +85,7 @@ struct HotKey: Codable, Equatable, Hashable {
             var dead: UInt32 = 0
             var length = 0
             var chars = [UniChar](repeating: 0, count: 4)
-            let status = UCKeyTranslate(layout, code, UInt16(kUCKeyActionDisplay), 0, UInt32(LMGetKbdType()),
+            let status = UCKeyTranslate(layout, code, UInt16(kUCKeyActionDisplay), shift ? UInt32(shiftKey >> 8) & 0xFF : 0, UInt32(LMGetKbdType()),
                                         OptionBits(kUCKeyTranslateNoDeadKeysBit), &dead, 4, &length, &chars)
             guard status == noErr, length > 0 else { return nil }
             let s = String(utf16CodeUnits: chars, count: length)
@@ -97,7 +97,7 @@ struct HotKey: Codable, Equatable, Hashable {
         name(code: Int(event.keyCode), characters: event.charactersIgnoringModifiers) ?? "?"
     }
 
-    private static func name(code: Int, characters: String?) -> String? {
+    static func name(code: Int, characters: String?) -> String? {
         if let f = fKeys[code] { return "F\(f)" }
         switch code {
         case kVK_Return: return "↩"
@@ -122,11 +122,24 @@ struct HotKey: Codable, Equatable, Hashable {
 
     /// Key code → F-key number. A table, not a range: the codes are scattered (F1 is 122,
     /// F20 is 90).
-    private static let fKeys: [Int: Int] = {
+    static let fKeys: [Int: Int] = {
         let codes = [kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8, kVK_F9, kVK_F10,
                      kVK_F11, kVK_F12, kVK_F13, kVK_F14, kVK_F15, kVK_F16, kVK_F17, kVK_F18, kVK_F19, kVK_F20]
         return Dictionary(uniqueKeysWithValues: codes.enumerated().map { ($1, $0 + 1) })
     }()
+
+    /// Modifier keys themselves aren't shortcuts.
+    static let modifierKeys: Set<Int> = [kVK_Command, kVK_Shift, kVK_CapsLock, kVK_Option, kVK_Control, kVK_RightCommand,
+                                         kVK_RightShift, kVK_RightOption, kVK_RightControl, kVK_Function]
+
+    /// F1–F20 may stand alone: no app types with them.
+    static func isFunctionKey(_ code: Int) -> Bool { fKeys[code] != nil }
+
+    /// The rule for every ExpansionLens shortcut: ⌘ ⌥ or ⌃ with a key, or an F-key on its own.
+    static func isAllowed(keyCode: Int, carbonModifiers: UInt32) -> Bool {
+        (0...127).contains(keyCode) && !modifierKeys.contains(keyCode)
+            && (carbonModifiers & UInt32(controlKey | optionKey | cmdKey) != 0 || isFunctionKey(keyCode))
+    }
 }
 
 /// System-wide shortcuts through Carbon's RegisterEventHotKey: works from a menu bar app
@@ -138,11 +151,18 @@ final class HotKeyCenter {
     private var refs: [UInt32: EventHotKeyRef] = [:]
     private var actions: [UInt32: HotKeyAction] = [:]
     private var installed = false
+    #if DEBUG
+    /// The shortcut editor test registers nothing, so it can't take keys from other apps.
+    static var debugNoRegister = false
+    #endif
 
     /// Registers the shortcuts, replacing earlier registrations.
     func apply() {
         // An agent CLI test copy registers no shortcuts.
         guard !AgentSocket.isTestRun else { return }
+        #if DEBUG
+        guard !Self.debugNoRegister else { return }
+        #endif
         installHandlerOnce()
         unregisterAll()
         var next: UInt32 = 1
@@ -176,10 +196,9 @@ final class HotKeyCenter {
     func change(id: String, keyCode: Int, carbonModifiers: Int) -> String? {
         guard let action = HotKeyAction(rawValue: id) else { return "ExpansionLens has no shortcut called \(id)." }
         let mods = UInt32(carbonModifiers) & UInt32(controlKey | optionKey | shiftKey | cmdKey)
-        guard mods & UInt32(controlKey | optionKey | cmdKey) != 0, (0...127).contains(keyCode),
-              !RecordingCatcher.skipped.contains(keyCode),
+        guard HotKey.isAllowed(keyCode: keyCode, carbonModifiers: mods),
               let key = HotKey(keyCode: UInt32(keyCode), carbonModifiers: mods) else {
-            return "ExpansionLens shortcuts need ⌘, ⌥ or ⌃ and a key."
+            return "ExpansionLens shortcuts need ⌘, ⌥ or ⌃ and a key (F-keys may stand alone)."
         }
         if let owner = owner(of: key, except: action) {
             return "ExpansionLens already uses \(key.display) for “\(owner)”."
@@ -196,7 +215,12 @@ final class HotKeyCenter {
 
     /// Who already uses a shortcut, to warn before assigning it twice.
     func owner(of key: HotKey, except: HotKeyAction) -> String? {
-        HotKeyAction.allCases.first { $0 != except && Preferences.shared.hotKey($0).map { $0.keyCode == key.keyCode && $0.modifiers == key.modifiers } == true }?.title
+        others(using: key, except: except).first?.title
+    }
+
+    /// The other shortcuts that use these keys.
+    func others(using key: HotKey, except: HotKeyAction?) -> [HotKeyAction] {
+        HotKeyAction.allCases.filter { $0 != except && Preferences.shared.hotKey($0).map { $0.keyCode == key.keyCode && $0.modifiers == key.modifiers } == true }
     }
 
     /// While a shortcut is being recorded, the current ones must not fire.
@@ -249,14 +273,16 @@ enum RecordingCatcher {
         return mods == UInt32(shiftKey) ? nil : mods
     }
     /// Modifier and function keys themselves aren't shortcuts.
-    static let skipped: Set<Int> = [kVK_Command, kVK_Shift, kVK_CapsLock, kVK_Option, kVK_Control, kVK_RightCommand,
-                                    kVK_RightShift, kVK_RightOption, kVK_RightControl, kVK_Function]
+    static let skipped = HotKey.modifierKeys
     private static var refs: [EventHotKeyRef] = []
     private static var onCatch: ((HotKey) -> Void)?
 
     static func begin(_ caught: @escaping (HotKey) -> Void) {
         end()
         onCatch = caught
+        #if DEBUG
+        guard !HotKeyCenter.debugNoRegister else { return }
+        #endif
         HotKeyCenter.shared.installHandlerOnce()
         for code in 0..<128 where !skipped.contains(code) {
             for (index, mods) in modifierSets.enumerated() {
@@ -279,87 +305,5 @@ enum RecordingCatcher {
         let code = id >> 4, index = Int(id & 0xF)
         guard modifierSets.indices.contains(index), let key = HotKey(keyCode: code, carbonModifiers: modifierSets[index]) else { return }
         onCatch?(key)
-    }
-}
-
-/// Click, then press a shortcut. Esc cancels, Delete clears.
-struct ShortcutRecorder: NSViewRepresentable {
-    @Binding var hotKey: HotKey?
-
-    func makeNSView(context: Context) -> RecorderButton {
-        let view = RecorderButton()
-        view.onChange = { hotKey = $0 }
-        view.hotKey = hotKey
-        return view
-    }
-
-    func updateNSView(_ view: RecorderButton, context: Context) {
-        view.onChange = { hotKey = $0 }
-        view.hotKey = hotKey
-    }
-
-    final class RecorderButton: NSButton {
-        var onChange: ((HotKey?) -> Void)?
-        var hotKey: HotKey? { didSet { refresh() } }
-        private var recording = false { didSet { refresh() } }
-        private var monitor: Any?
-
-        override init(frame: NSRect) {
-            super.init(frame: frame)
-            bezelStyle = .rounded
-            target = self
-            action = #selector(toggle)
-            refresh()
-        }
-
-        required init?(coder: NSCoder) { fatalError() }
-
-        override var intrinsicContentSize: NSSize { NSSize(width: 140, height: super.intrinsicContentSize.height) }
-
-        private func refresh() {
-            title = recording ? "Press a shortcut…" : (hotKey?.display ?? "Click to set")
-        }
-
-        @objc private func toggle() {
-            recording ? stop() : start()
-        }
-
-        private func start() {
-            recording = true
-            HotKeyCenter.shared.unregisterAll()
-            // Combinations with ⌘ ⌥ or ⌃ arrive here, including ones macOS would otherwise keep.
-            RecordingCatcher.begin { [weak self] key in
-                guard let self, self.recording else { return }
-                self.hotKey = key
-                self.onChange?(key)
-                self.stop()
-            }
-            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-                guard let self else { return event }
-                switch Int(event.keyCode) {
-                case kVK_Escape:
-                    self.stop()
-                case kVK_Delete, kVK_ForwardDelete:
-                    self.hotKey = nil
-                    self.onChange?(nil)
-                    self.stop()
-                default:
-                    guard let key = HotKey(event: event) else { NSSound.beep(); return nil }
-                    self.hotKey = key
-                    self.onChange?(key)
-                    self.stop()
-                }
-                return nil
-            }
-        }
-
-        private func stop() {
-            recording = false
-            RecordingCatcher.end()
-            if let monitor { NSEvent.removeMonitor(monitor) }
-            monitor = nil
-            // The binding writes Preferences synchronously, so this sees the new key.
-            HotKeyCenter.shared.apply()
-        }
     }
 }

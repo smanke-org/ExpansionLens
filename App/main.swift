@@ -87,6 +87,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             DebugQuitTest.run(how)
             return
         }
+        if let snapshot = ProcessInfo.processInfo.environment["EXPANSIONLENS_DEBUG_SHORTCUT_EDITOR"] {
+            DebugShortcutEditor.run(snapshot: snapshot)
+            return
+        }
         #if !APPSTORE
         // The update prompt, What's New and Settings drawn to PNGs; also starts nothing else.
         if let folder = ProcessInfo.processInfo.environment["EXPANSIONLENS_DEBUG_UPDATE_NOTES"] {
