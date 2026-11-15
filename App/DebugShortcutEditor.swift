@@ -60,7 +60,16 @@ enum DebugShortcutEditor {
                 model.typed("k")
                 trace("bare k: key \(model.keyText) combo \(model.combo?.display ?? "-") problem \(model.problem ?? "-")")
                 model.choose(kVK_F6)
-                trace("F6 alone: \(model.combo?.display ?? "-") problem \(model.problem ?? "-")")
+                model.typed(model.keyText) // the key box hands the menu's name back
+                trace("F6 alone: key \(model.keyText) \(model.combo?.display ?? "-") problem \(model.problem ?? "-")")
+                model.command = true
+                model.choose(kVK_Space)
+                model.typed(model.keyText)
+                trace("⌘Space from menu: key \(model.keyText) \(model.combo?.display ?? "-")")
+                model.choose(kVK_PageDown)
+                model.typed(model.keyText)
+                trace("⌘PageDown from menu: key \(model.keyText) \(model.combo?.display ?? "-")")
+                model.command = false
                 model.command = true
                 model.typed("q")
                 trace("⌘Q: \(model.combo?.display ?? "-") system \(model.systemUse ?? "-")")

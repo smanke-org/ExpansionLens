@@ -186,10 +186,11 @@ struct ShortcutRecorder: NSViewRepresentable {
 
     /// The key box changed: keep the last character typed and find its key.
     func typed(_ text: String) {
+        // A named key from the menu (F6, Space) comes back as its whole name: keep it.
+        if let code = keyCode, KeyNames.name(code) == text { keyText = text; return }
         if text.count > 1, let last = text.last { typed(String(last)); return }
         keyText = text
         guard !text.isEmpty else { keyCode = nil; return }
-        if let code = keyCode, KeyNames.name(code) == text { return }
         if let (code, needsShift) = KeyNames.keyCode(for: text) {
             keyCode = code
             if needsShift { shift = true }
